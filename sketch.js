@@ -1,0 +1,154 @@
+const Engine = Matter.Engine;
+const Render = Matter.Render;
+const World = Matter.World;
+const Bodies = Matter.Bodies;
+const Constraint = Matter.Constraint;
+const Body = Matter.Body;
+const Composites = Matter.Composites;
+const Composite = Matter.Composite;
+
+var engine, world;
+
+var ground;
+var rope,fruit;
+var fruit_con;
+
+var bg_img;
+var food;
+var rabbit;
+
+var button,blower;
+var bunny;
+var blink,eat,sad;
+var mute_btn;
+
+var bk_song;
+var cut_sound;
+var sad_sound;
+var eating_sound;
+var air;
+
+function preload(){
+  bg_img = loadImage('background.png');
+  food = loadImage('melon.png');
+  rabbit = loadImage('Rabbit-01.png');
+
+  bk_song = loadSound('sound1.mp3');
+  sad_sound = loadSound("sad.wav")
+  cut_sound = loadSound('rope_cut.mp3');
+  eating_sound = loadSound('eating_sound.mp3');
+  air = loadSound('air.wav');
+
+  blink = loadAnimation("blink_1.png","blink_2.png","blink_3.png");
+  eat = loadAnimation("eat_0.png" , "eat_1.png","eat_2.png","eat_3.png","eat_4.png");
+  sad = loadAnimation("sad_1.png","sad_2.png","sad_3.png");
+  
+  blink.playing = true;
+  eat.playing = true;
+  sad.playing = true;
+  sad.looping = false;
+  eat.looping = false; 
+}
+
+function setup() {
+  createCanvas(500,700);
+
+  frameRate(80);
+
+  engine = Engine.create();
+  world = engine.world;
+  
+  //criar botão de cortar
+  button = createImg("cut_btn.png");
+  button.position(225,30);
+  button.size(50,50);
+  button.mouseClicked(drop);
+
+  //criar o chao
+  ground = new Ground(250,685,500,30);
+
+  //delay das animações
+  blink.frameDelay = 8;
+  eat.frameDelay = 20;
+
+  //criar o coelho
+  bunny = createSprite(210,620,100,100);
+  bunny.scale = 0.2;
+
+  //animaçoes do coelho
+  bunny.addAnimation('blinking',blink);
+  bunny.addAnimation('eating',eat);
+  bunny.addAnimation('crying',sad);
+  bunny.changeAnimation('blinking');
+  
+  //criar a corda
+  rope = new Rope(7, {x:250, y:30});
+
+  //criar fruta
+  fruit = Bodies.circle(225,200,30);
+
+  //criar ligação
+  Matter.Composite.add(rope.body, fruit);
+  fruit_con = new Link(rope, fruit);
+
+  //rectmode/ellipsemode/textsize
+  rectMode(CENTER);
+  ellipseMode(RADIUS);
+  textSize(50);
+}
+
+function draw() {
+  //fundo
+  image(bg_img,0,0,500,700);
+
+  //atualiza a engine
+  Engine.update(engine);
+
+  //mostrar fruta
+  push();
+  if(fruit != null){
+    image(food,fruit.position.x,fruit.position.y,60,60);
+  }
+  pop();
+  //mostrar corda
+  rope.show();
+
+  //mostar chao
+  ground.show();
+
+  //desenhar sprites
+  drawSprites();
+
+  //se o coelho collide com a fruta
+  if(collide(fruit, bunny) == true){
+    bunny.changeAnimation('eating');
+  }
+
+  //se erra
+  if(fruit != null && fruit.position.y >= 650){
+    bunny.changeAnimation('crying');
+    fruit = null;
+  }
+}
+
+//dropar a fruta
+function drop(){
+  rope.break();
+  fruit_con.detach();
+  fruit_con = null;
+}
+
+//collide
+function collide(body,sprite){
+  if(body != null){
+    var d = dist(body.position.x, body.position.y, sprite.position.x, sprite.position.y);
+    if(d <= 30){
+      World.remove(engine.world, fruit);
+      fruit = null;
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+}
